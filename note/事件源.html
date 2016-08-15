@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>事件源</title>
+	<meta charset="utf-8">
+	<script type="text/javascript">
+		
+		window.onload = function(){
+
+			var mUl = document.getElementById('mUl');
+			mUl.onmouseover = function(ev){
+				var event = ev || window.event;
+				var eventSrc = event.target || event.srcElement;
+				// 在IE中    事件源是  event.srcElement
+				// 在标准中  事件源是  event.target
+				eventSrc.style.background = 'red';
+			}
+			mUl.onmouseout = function(ev){
+				var event = ev || window.event;
+				var eventSrc = event.target || event.srcElement;
+				eventSrc.style.background = 'white';
+			}
+		}
+
+		// 以这种方式实现 事件代理
+		// 将事件加到父级上，当插入子DOM时，新的DOM不用再添加事件
+	</script>
+</head>
+<body>
+
+	<ul id="mUl">
+		
+		<li>111</li>
+		<li>222</li>
+		<li>333</li>
+		<li>444</li>
+
+	</ul>
+
+</body>
+</html>
