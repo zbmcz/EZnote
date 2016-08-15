@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>pic</title>
+	<meta charset="utf-8">
+	<script type="text/javascript" src="jquery-1.11.0.min.js"></script>
+	<script type="text/javascript">
+		
+		"use strict";
+		(function(window){
+			var f = {};
+
+			if (!Array.prototype.forEach) {
+			    Array.prototype.forEach = function (fn, thisObj) {
+			        var scope = thisObj || window;
+			        for (var i = 0, j = this.length; i < j; ++i) {
+			            fn.call(scope, this[i], i, this);
+			        }
+			    };
+			}
+			if (!Array.prototype.filter) {
+			    Array.prototype.filter = function (fn, thisObj) {
+			        var scope = thisObj || window;
+			        var a = [];
+			        for (var i = 0, j = this.length; i < j; ++i) {
+			            if (!fn.call(scope, this[i], i, this)) {
+			                continue;
+			            }
+			            a.push(this[i]);
+			        }
+			        return a;
+			    };
+			}
+
+			f.observer = {};
+			(function(o){
+				var _collection = {};
+				o.regist = function(action,func){
+					if(!action)
+						throw new Error( "please confirm the action" );
+					if(!_collection[action])
+						_collection[action] = [];
+					_collection[action].push(func);
+				}
+				o.unregist = function(action,func){
+					if(action){
+						_collection[action] = _collection[action].filter(function(obj){
+							if(obj === func)
+								return false;
+							return true;
+						});
+						return;
+					}
+					for(var field in _collection){
+						var arr = _collection[field];
+						_collection[field] = arr.filter(function(obj){
+							if(obj === func)
+								return false;
+							return true;
+						});
+					}
+				}
+				o.broadcast = function(action,params){
+					if(action){
+						if(_collection[action]){
+							_collection[action].forEach(function(obj){
+								obj.call(this , params);
+							});
+						}
+						return;
+					}
+					for(var field in _collection){
+						_collection[field].forEach(function(obj){
+							obj.call(this , params);
+						});
+					}
+				}
+				o.getObserveFunc = function(obj){
+					for(var field in this){
+						obj[field] = this[field];
+						obj._collection = [];
+					}
+				}
+			})(f.observer);
+
+			/**
+				@example
+				var createMask = singleton( function(color){
+					console.log("I create a task which color is " + color);
+					return document.body.appendChild( document.createElement('div') );
+			 	});
+			 	var color = "red";
+				var mask = createMask(color);
+				console.log("mask = " + mask);
+			*/
+			f.singleton = function(fn){
+				var result;
+			    return function(){
+			        return result || ( result = fn .apply( this, arguments ) );
+			    }
+			};
+
+			window.pic = f;
+
+		})(window);
+
+	</script>
+	<script type="text/javascript">
+		$(document).ready(function(){
+
+			pic.observer.regist('btn',function(params){
+				
+			});
+
+			$("#b1").on('click',function(){
+
+			});
+		});
+	</script>
+</head>
+<body>
+	<button id="b1">click me 1</button>
+	<button id="b2">click me 2</button>
+	<button id="b2">click me 3</button>
+	<button id="b2">click me 4</button>
+</body>
+</html>
