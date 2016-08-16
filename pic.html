@@ -8,6 +8,7 @@
 		
 		"use strict";
 		(function(window){
+
 			var f = {};
 
 			if (!Array.prototype.forEach) {
@@ -99,6 +100,45 @@
 			        return result || ( result = fn .apply( this, arguments ) );
 			    }
 			};
+
+			/**
+				@example
+				factory.add('div',function(){
+					//
+				});
+				factory.add('table',function(){
+					//
+				});
+			 	var oDiv = factory.getInstance('div');
+			*/
+			f.factory = {};
+			(function(o){
+				var _collection = {};
+				o.add = function(name,fn){
+					if(!name)
+						throw new Error( 'please call it in right way' );
+					_collection[name] = fn;
+					return fn;
+				}
+				o.clear = function(name){
+					if(!name)
+						throw new Error( 'please call it in right way' );
+					_collection[name] = null;
+				}
+				o.getInstance = function(name){
+					if(!name)
+						return null;
+					if(!_collection[name])
+						return null;
+					return new _collection[name]();
+				}
+				o.getFactoryFunc = function(obj){
+					for(var field in this){
+						obj[field] = this[field];
+						obj._collection = [];
+					}
+				}
+			})(f.factory);
 
 			window.pic = f;
 
