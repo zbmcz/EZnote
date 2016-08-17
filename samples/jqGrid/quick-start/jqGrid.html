@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>jqGrid Test</title>
+	<meta charset="utf-8">
+
+	<!-- in order to make the jqGrid more beautiful -->
+	<link rel="stylesheet" type="text/css" href="jquery-ui.min.css">
+	<!-- required -->
+	<script type="text/javascript" src="jquery-1.11.0.min.js"></script>
+
+
+	<!-- jqGrid css files -->
+	<link rel="stylesheet" type="text/css" href="ui.jqgrid.css">
+	<!-- jqGrid js files -->
+	<script type="text/javascript" src="grid.locale-cn.js"></script>
+	<script type="text/javascript" src="jquery.jqGrid.min.js"></script>
+	<script type="text/javascript">
+		//jquery中的只读属性
+		//	records : 定义了grid中的行数
+		//	reccount : 定义了grid中确切的行数,假如rowNum=15，但是从服务器端返回的记录数是20，那么records值是20，但reccount值仍然为15，而且表格中也只显示15条记录
+		function show(){
+			$("#mTable").jqGrid({
+			   	url:'http://localhost:7999/data.json',
+				datatype: "json",
+			   	colNames:['sid','Date', 'Client', 'Amount','Tax','Total','Notes'],
+			   	colModel:[
+			   		{name:'sid',index:'sid', width:55},
+			   		{name:'invdate',index:'invdate', width:90},
+			   		{name:'name',index:'name asc, invdate', width:100},
+			   		{name:'amount',index:'amount', width:80, align:"right"},
+			   		{name:'tax',index:'tax', width:80, align:"right"},		
+			   		{name:'total',index:'total', width:80,align:"right"},		
+			   		{name:'note',index:'note', width:150, sortable:false}
+			   		//index 传到服务器端用来排序用的列名称；
+			   		//width 列宽度
+			   		//align 对齐方式
+			   		//sortable 是否可以排序
+			   	],
+			   	page : 1,			//设置初始的页码，默认值为1
+			   	rowNum: 15,
+			   	rowList:[15,30,45],
+			   	autowidth:true,		//自动宽
+			   	rownumbers:true,	//添加左侧行号
+			   	altRows:true,		//设置为交替行表格,默认为false (设置表格 zebra-striped 值)
+			   	altclass:'ui-priority-secondary',	//用来指定行显示的css，可以编辑自己的css文件，只有当altRows设为ture时起作用,默认值为ui-priority-secondary
+			   	autoencode : false,	//对url进行编码，默认值为false
+			   	viewrecords: true,	//是否在浏览导航栏显示记录总数
+			   	mtype: 'GET',		//ajax提交方式。POST或者GET，默认GET
+			   	pager: '#mPager',
+			   	pagerpos : 'center',// 指定分页栏的位置
+			   	pgbuttons : true,	// 是否显示翻页按钮
+			   	sortname: 'sid',    // 作为一个name="sidx"的参数传到后台
+			    viewrecords: true,
+			    sortorder: "desc", 	// 作为一个name="sord"的参数传到后台,数据并不在前台排序
+			    caption:"JSON Data",// 表格名称
+			    jsonReader:{
+		            //id: "blackId",	//设置返回参数中，表格ID的名字为blackId
+		            repeatitems : false
+		        },
+		        editurl : "",		//定义对form编辑时的url
+		        loadonce : false,	//如果为ture则数据只从服务器端抓取一次，之后所有操作都是在客户端执行，翻页功能会被禁用，默认为false
+		        loadtext :　'请耐心等待', //当请求或者排序时所显示的文字内容
+		        loadui : 'enable',	//当执行ajax请求时的提示； block启用Loading提示，但是阻止其他操作
+		        multiselect : false//定义是否可以多选，默认为false
+			});
+			jQuery("#mTable").jqGrid('navGrid','#mPager',{edit:false,add:false,del:false});
+		}
+
+	</script>
+</head>
+<body>
+	<button onclick="show();">show jqgrid</button><br/>
+	<table id="mTable"></table>
+	<div id="mPager"></div>
+</body>
+</html>

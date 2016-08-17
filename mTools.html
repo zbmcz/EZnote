@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>pic</title>
+	<title>mTools</title>
 	<meta charset="utf-8">
-	<script type="text/javascript" src="jquery-1.11.0.min.js"></script>
 	<script type="text/javascript">
 		
 		"use strict";
@@ -33,6 +32,10 @@
 			    };
 			}
 
+			/**
+				@name 观察者模式
+				@example
+			*/
 			f.observer = {};
 			(function(o){
 				var _collection = {};
@@ -85,6 +88,7 @@
 			})(f.observer);
 
 			/**
+				@name 单例设计模式
 				@example
 				var createMask = singleton( function(color){
 					console.log("I create a task which color is " + color);
@@ -102,6 +106,7 @@
 			};
 
 			/**
+				@name 工厂设计模式
 				@example
 				factory.add('div',function(){
 					//
@@ -140,28 +145,59 @@
 				}
 			})(f.factory);
 
-			window.pic = f;
+			f.validate = {};
+
+			window.mTools = f;
 
 		})(window);
 
 	</script>
 	<script type="text/javascript">
-		$(document).ready(function(){
-
-			pic.observer.regist('btn',function(params){
-				
+		function fn1(){
+			function f1(params){
+				alert("first finish" + " " + params);
+			}
+			mTools.observer.regist('finish',f1);
+			mTools.observer.regist('finish',function(params){
+				alert("second finish" + " " + params)
 			});
+			mTools.observer.broadcast('finish',"123");
+			mTools.observer.unregist('finish',f1);
+			mTools.observer.broadcast('finish',"456");
+			var obj = {};
+			mTools.observer.getObserveFunc(obj);
+		}
 
-			$("#b1").on('click',function(){
+		function fn2(){
+			var createMask = mTools.singleton( function(color){
+				console.log("I create a task which color is " + color);
+				return document.body.appendChild( document.createElement('div') );
+			 });
+			var color = "red";
+			var mask1 = createMask(color);
+			var mask2 = createMask(color);
+			alert(mask1 === mask2);
+		}
 
+		function fn3(){
+			mTools.factory.add('man',function(){
+				this.name = "man";
+				this.age = 21;
 			});
-		});
+			mTools.factory.add('woman',function(){
+				this.name = "woman";
+				this.age = 18;
+			});
+			var woman = mTools.factory.getInstance('woman');
+			alert(woman);
+			alert("woman.name = " + woman.name);
+		}
 	</script>
 </head>
 <body>
-	<button id="b1">click me 1</button>
-	<button id="b2">click me 2</button>
-	<button id="b2">click me 3</button>
-	<button id="b2">click me 4</button>
+	<button id="b1" onclick="fn1();">click me 1 观察者模式</button>
+	<button id="b2" onclick="fn2();">click me 2 单例模式</button>
+	<button id="b2" onclick="fn3();">click me 3 工厂模式</button>
+	<button id="b2" onclick="fn4();">click me 4</button>
 </body>
 </html>
