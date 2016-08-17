@@ -79,6 +79,12 @@
 						});
 					}
 				}
+				o.clear = function(action){
+					if(!action)
+						_collection = {};
+					else
+						_collection[action] = [];
+				}
 				o.getObserveFunc = function(obj){
 					for(var field in this){
 						obj[field] = this[field];
@@ -145,8 +151,107 @@
 				}
 			})(f.factory);
 
-			f.validate = {};
+			/**
+				@name 策略模式,表单验证工具
+				@example
+			*/
+			f.validator = {};
+			f.validate = (function(v){
+				var _rule_collection = {},_rules_cache = [];
+				var Rule = function(name,defaultConfig,fn){
+					this.name = name;
+					this.defaultConfig = defaultConfig;
+					this.fn = fn;
+				};
+				// default rules
+				(function(c){
+					// isNotEmpty
+					var isNotEmpty = new Rule("isNotEmpty",true,function(config,str){
+						if(!config)
+							config = this.defaultConfig;
+						var ret = {'status':true,'message':''};
+						if(config){
+							// "" 和 "   " 和 undefined 和 null 都是empty
+							if(!(str && str.trim)){
+								ret.status = false;
+								ret.message = "字段为空";
+							}
+						}else{
+							if(!(str && str.trim)){
+								ret.status = false;
+								ret.message = "字段为空";
+							}
+						}
+					});
+					_rule_collection["isNotEmpty"] = isNotEmpty;
+					//maxLength
+					var maxLength = new Rule("maxLength",10,function(config,str){
+						if(!config)
+							config = this.defaultConfig;
+						// 先验证str是否为空
+						
 
+						var ret = {'status':true,'message':''};
+						if(!(typeof str == 'string')){
+							ret.status = false;
+							ret.message = '该字段不是字符串,无法判断长度';
+						}
+						if(str.length > config){
+							ret.status = false;
+							ret.message = '字段长度超过规定最大值' + config;
+						}
+						return ret;
+					});
+					_rule_collection["maxLength"] = maxLength;
+
+				})(_rule_collection);
+				// add your own validate rules
+				v.regist = function(name,defaultConfig,fn){
+					if(!name)
+						return;
+					var _user_rule = new Rule(name,defaultConfig,fn);
+					_rule_collection[name] = _user_rule;
+				}
+
+				return function(obj,rule){
+					if(!rule)
+							throw new Error( 'The rule could not be null.' );
+					var retSet = {'status':true,'message':[]};
+					if(typeof obj == 'string'){
+						for(var i in rule){
+							_rules_cache.push({
+								'name' : i,
+								'config' : rule[i]
+							});
+						}
+						if(_rules_cache.length > 0)
+							for(var index in _rules_cache){
+								var name = _rules_cache[index].name;
+								var config = _rules_cache[index].config;
+								if(!_rule_collection[name])
+									continue;
+								var ret = _rule_collection[name].fn.call(config,obj);
+								if(!ret.status){
+									retSet.status = false;
+									retSet.message.push(ret.message);
+								}
+							}
+						_rules_cache = [];
+						return retSet;
+					}
+					if(typeof obj == 'object'){
+
+					}
+				}
+			})(f.validator);
+			/*
+			(function(v){
+				v._rule_collection = {};
+				v.validate = function(){
+
+				}
+			})(f.validator);
+			*/
 			window.mTools = f;
 
 		})(window);
@@ -192,12 +297,21 @@
 			alert(woman);
 			alert("woman.name = " + woman.name);
 		}
+
+		function fn4(){
+			var str = "123456789";
+			var ret = mTools.validate(str,{
+				maxLength:20
+			})
+			alert(ret);
+			//mTools.validator.validate(str);
+		}
 	</script>
 </head>
 <body>
 	<button id="b1" onclick="fn1();">click me 1 观察者模式</button>
 	<button id="b2" onclick="fn2();">click me 2 单例模式</button>
 	<button id="b2" onclick="fn3();">click me 3 工厂模式</button>
-	<button id="b2" onclick="fn4();">click me 4</button>
+	<button id="b2" onclick="fn4();">click me 4 策咯模式,表单验证工具</button>
 </body>
 </html>
