@@ -154,16 +154,33 @@
 			/**
 				@name 策略模式,表单验证工具
 				@example
+				var ret = mTools.validate("This is mTools",{
+					isNotEmpty : true,
+					maxLength : 20
+				});
+				console.log('status = ' + ret.status);
+				console.log('message_array_length = ' + ret.message.length);
+
+				@example 如果想添加验证规则
+				mTools.validator.regist('minLength',[defaultConfig],function(config,str){
+					if(!config)
+						config = this.defaultConfig;
+					//
+					return {
+						'status':true,
+						'message':''
+					}
+				});
 			*/
 			f.validator = {};
 			f.validate = (function(v){
-				var _rule_collection = {},_rules_cache = [];
+				var _rule_collection = {},_rules_stack = [];
 				var Rule = function(name,defaultConfig,fn){
 					this.name = name;
 					this.defaultConfig = defaultConfig;
 					this.fn = fn;
 				};
-				// default rules
+				// regist default rules
 				(function(c){
 					// isNotEmpty
 					var isNotEmpty = new Rule("isNotEmpty",true,function(config,str){
@@ -172,26 +189,30 @@
 						var ret = {'status':true,'message':''};
 						if(config){
 							// "" 和 "   " 和 undefined 和 null 都是empty
-							if(!(str && str.trim)){
+							if(!(str && str.trim())){
 								ret.status = false;
 								ret.message = "字段为空";
 							}
 						}else{
-							if(!(str && str.trim)){
+							// 期望为空
+							if(str && str.trim()){
 								ret.status = false;
-								ret.message = "字段为空";
+								ret.message = "字段不为空";
 							}
 						}
+						return ret;
 					});
 					_rule_collection["isNotEmpty"] = isNotEmpty;
 					//maxLength
 					var maxLength = new Rule("maxLength",10,function(config,str){
 						if(!config)
 							config = this.defaultConfig;
-						// 先验证str是否为空
-						
-
 						var ret = {'status':true,'message':''};
+						// 先验证str是否为空
+						if(!str){
+							ret.status = false;
+							ret.message = '该字段为空,无法判断长度';
+						}
 						if(!(typeof str == 'string')){
 							ret.status = false;
 							ret.message = '该字段不是字符串,无法判断长度';
@@ -209,7 +230,11 @@
 				v.regist = function(name,defaultConfig,fn){
 					if(!name)
 						return;
-					var _user_rule = new Rule(name,defaultConfig,fn);
+					var _user_rule;
+					if(typeof defaultConfig == 'function')
+						_user_rule = new Rule(name,null,defaultConfig);
+					else
+						_user_rule = new Rule(name,defaultConfig,fn);
 					_rule_collection[name] = _user_rule;
 				}
 
@@ -219,24 +244,24 @@
 					var retSet = {'status':true,'message':[]};
 					if(typeof obj == 'string'){
 						for(var i in rule){
-							_rules_cache.push({
+							_rules_stack.push({
 								'name' : i,
 								'config' : rule[i]
 							});
 						}
-						if(_rules_cache.length > 0)
-							for(var index in _rules_cache){
-								var name = _rules_cache[index].name;
-								var config = _rules_cache[index].config;
+						if(_rules_stack.length > 0)
+							for(var index in _rules_stack){
+								var name = _rules_stack[index].name;
+								var config = _rules_stack[index].config;
 								if(!_rule_collection[name])
 									continue;
-								var ret = _rule_collection[name].fn.call(config,obj);
+								var ret = _rule_collection[name].fn.call(_rule_collection[name],config,obj);
 								if(!ret.status){
 									retSet.status = false;
 									retSet.message.push(ret.message);
 								}
 							}
-						_rules_cache = [];
+						_rules_stack = [];
 						return retSet;
 					}
 					if(typeof obj == 'object'){
@@ -244,14 +269,7 @@
 					}
 				}
 			})(f.validator);
-			/*
-			(function(v){
-				v._rule_collection = {};
-				v.validate = function(){
-
-				}
-			})(f.validator);
-			*/
+			
 			window.mTools = f;
 
 		})(window);
@@ -299,12 +317,28 @@
 		}
 
 		function fn4(){
-			var str = "123456789";
+			var str = "  123";
 			var ret = mTools.validate(str,{
-				maxLength:20
+				isNotEmpty : true,
+				maxLength:12
 			})
-			alert(ret);
-			//mTools.validator.validate(str);
+			alert('ret.status = ' + ret.status);
+			mTools.validator.regist('minLength',function(config,str){
+				if(!config)
+					config = this.defaultConfig;
+				if(str.length < config)
+					return {
+						status : false,
+						message : '字段长度小于规定最小值'
+					};
+				return {
+					status : true
+				}
+			});
+			var ret1 = mTools.validate("123",{
+				minLength : 4
+			});
+			alert('ret1.status = ' + ret1.status);
 		}
 	</script>
 </head>
