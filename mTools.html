@@ -3,6 +3,11 @@
 <head>
 	<title>mTools</title>
 	<meta charset="utf-8">
+	<style type="text/css">
+		table,tr,th,td{
+			border:1px solid black;
+		}
+	</style>
 	<script type="text/javascript">
 		
 		"use strict";
@@ -237,35 +242,50 @@
 						_user_rule = new Rule(name,defaultConfig,fn);
 					_rule_collection[name] = _user_rule;
 				}
+				// parse form value to json
+				v.form2mjson = function(form_id){
 
+				}
+				// private method
+				function execute_simple_str(obj,rule){
+					var retSet = {'status':true,'message':[]};
+					for(var i in rule){
+						_rules_stack.push({
+							'name' : i,
+							'config' : rule[i]
+						});
+					}
+					if(_rules_stack.length > 0)
+						for(var index in _rules_stack){
+							var name = _rules_stack[index].name;
+							var config = _rules_stack[index].config;
+							if(!_rule_collection[name])
+								continue;
+							var ret = _rule_collection[name].fn.call(_rule_collection[name],config,obj);
+							if(!ret.status){
+								retSet.status = false;
+								retSet.message.push(ret.message);
+							}
+						}
+					_rules_stack = [];
+					return retSet;
+				}
+				// private method
+				function execute_form_json(obj,rule){
+					var retObj = {};
+					for(var i in obj){
+						retObj[i] = execute_simple_str(obj[i].value,obj[i].rule);
+					}
+					return retObj;
+				}
 				return function(obj,rule){
 					if(!rule)
 							throw new Error( 'The rule could not be null.' );
-					var retSet = {'status':true,'message':[]};
 					if(typeof obj == 'string'){
-						for(var i in rule){
-							_rules_stack.push({
-								'name' : i,
-								'config' : rule[i]
-							});
-						}
-						if(_rules_stack.length > 0)
-							for(var index in _rules_stack){
-								var name = _rules_stack[index].name;
-								var config = _rules_stack[index].config;
-								if(!_rule_collection[name])
-									continue;
-								var ret = _rule_collection[name].fn.call(_rule_collection[name],config,obj);
-								if(!ret.status){
-									retSet.status = false;
-									retSet.message.push(ret.message);
-								}
-							}
-						_rules_stack = [];
-						return retSet;
+						return execute_simple_str();
 					}
 					if(typeof obj == 'object'){
-
+						return execute_form_json(obj,rule);
 					}
 				}
 			})(f.validator);
@@ -340,12 +360,46 @@
 			});
 			alert('ret1.status = ' + ret1.status);
 		}
+
+		function fn5(){
+
+		}
 	</script>
 </head>
 <body>
 	<button id="b1" onclick="fn1();">click me 1 观察者模式</button>
 	<button id="b2" onclick="fn2();">click me 2 单例模式</button>
 	<button id="b2" onclick="fn3();">click me 3 工厂模式</button>
-	<button id="b2" onclick="fn4();">click me 4 策咯模式,表单验证工具</button>
+	<button id="b2" onclick="fn4();">click me 4 策咯模式,验证单个字符串</button>
+	<button id="b2" onclick="fn5();">click me 5 策咯模式,验证表单</button>
+	<form id="mForm">
+		<table style="width:50%;">
+			<tr>
+				<th>名称</th>
+				<th>输入值</th>
+				<th>提示信息</th>
+			</tr>
+			<tr>
+				<td>用户名</td>
+				<td><input type="text" name="username" /></td>
+				<td id="username-tip"></td>
+			</tr>
+			<tr>
+				<td>密码</td>
+				<td><input type="password" name="password" id="password"/></td>
+				<td id="password-tip"></td>
+			</tr>
+			<tr>
+				<td>确认密码</td>
+				<td><input type="password" name="confirm_password"/></td>
+				<td id="confirm_password-tip"></td>
+			</tr>
+			<tr>
+				<td>昵称</td>
+				<td><input type="text" name="nickname"/></td>
+				<td id="nickname-tip"></td>
+			</tr>
+		</table>
+	</form>
 </body>
 </html>
