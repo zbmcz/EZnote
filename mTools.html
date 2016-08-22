@@ -13,6 +13,7 @@
 		"use strict";
 		(function(window){
 
+			var $ = window.$;
 			var f = {};
 
 			if (!Array.prototype.forEach) {
@@ -177,9 +178,8 @@
 					}
 				});
 			*/
-			/*
-			f.validator = {};
-			f.validate = (function(v){
+			f.validator_old = {};
+			f.validate_old = (function(v){
 				var _rule_collection = {},_rules_stack = [];
 				var Rule = function(name,defaultConfig,fn){
 					this.name = name;
@@ -289,8 +289,7 @@
 						return execute_form_json(obj,rule);
 					}
 				}
-			})(f.validator);
-			*/
+			})(f.validator_old);
 
 			// validate module core
 			// @example 如果想添加验证规则
@@ -308,6 +307,7 @@
 				// rule collection
 				var _rule_collection = {};
 				// common interface for f.validateStr and f.validate module
+				v._common = {};
 				v._common._rule_collection = _rule_collection;
 				// define a Rule Object
 				var Rule = function(name,defaultConfig,fn){
@@ -413,7 +413,7 @@
 					if(!rule)
 							throw new Error( 'The rule could not be null.' );
 					if(typeof obj == 'string')
-						return execute_simple_str();
+						return execute_simple_str(obj,rule);
 					return;
 				}
 			})(f.validator._common);
@@ -424,20 +424,26 @@
 
 			// });
 			f.validate = (function(common){
-				var _rule_collection = common._rule_collection , document = window.document;
+				var _rule_collection = common._rule_collection , document = window.document , formElement = null;
 				// config
 				var default_config = {
-					
-				};
+					'formId' : 'required',
+					'errorFeedback' : function(inputElement,labelElement){
+						// 默认在input后面追加label标签
+						inputElement.parentNode.appendChild(labelElement);
+					},
+					'successCallback' : function(){
+						// 表单验证成功 回调函数
+					},
+					'attributeName' : 'mTools-rule-stack',
+					'errorClass' : 'mTools-error',
+					'autoCommit' : false,
+					'onfocusout' : true,
+					'onkeyup' : true
+
+				} , user_config = {};
 				//
 				var _input = [];
-				_input.push({
-					'input' : inputElement,
-					'rule_stack' : [{'name':'isNotEmpty','config':true}],
-					'label' : labelElement,
-					'status' : false,
-					'callback' : function(){}
-				});
 				//inputWrapper.prototype = {};
 				// 先找到所有form下的input标签
 				// 逐一解析input的属性，生成每个input的规则栈
@@ -445,47 +451,89 @@
 				// return最终结果true或者false
 				// 根据配置 auto-commit 设置是否自动提交表单
 				function __init(formId){
-					var inputArray = document.getElementById(formId).getElementsByTagName("input");
+					formElement = document.getElementById(formId);
+					var inputArray = formElement.getElementsByTagName("input");
 					for(var index = 0 ; index < inputArray.length ; index++ ){
 						//var inputElement = inputArray[index];
-						var _rules = inputArray[index].getAttribute('mTools-rule-stack');
-						if(!_rules)
-							continue;
+						var _attributeName = user_config.attributeName ? user_config.attributeName : default_config.attributeName;
+						var _rules = inputArray[index].getAttribute(_attributeName);
+						_rules = eval('('+ _rules +')');
+
 						// push the wrapper into _input
 						var labelElement = document.createElement('label');
-						labelElement.setAttribute("for",inputElement.getAttribute('name'));
-						labelElement.className = "mTools-error";
-						var this_rule_stack = [];
-						for(var field in _rules){
-							this_rule_stack.push({
-								'name' : field,
-								'config' : _rules[field]
-							});
-						}
-						_input.push({
-							'input' : inputArray[index],
-							'label' : , labelElement,
-							'status' : false,
-							'rule_stack' : this_rule_stack;
-							'callback' : function(inputElement,error){
+						labelElement.setAttribute("for",inputArray[index].getAttribute('name'));
+						labelElement.className = user_config.errorClass ? user_config.errorClass : default_config.errorClass;
 
+						var callb = user_config.errorFeedback ? user_config.errorFeedback : default_config.errorFeedback;
+						var _wrapper = {
+							'input' : inputArray[index],
+							'label' : labelElement,
+							'status' : false,
+							//'rule_stack' : this_rule_stack,
+							'rule_obj' : _rules,
+							'callback' : callb,
+							'version' : 1 // 版本,每验证一次加1
+						};
+						_input.push(_wrapper);
+						// onfocusout
+						var _onfocusout = user_config.onfocusout ? user_config.onfocusout : default_config.onfocusout;
+						if(_onfocusout){
+							inputArray[index].onblur = function(){
+								validate_single_input(_wrapper);
+							};
+						}
+						// onkeyup
+						var _onkeyup = user_config.onkeyup ? user_config.onkeyup : default_config.onkeyup;
+						if(_onkeyup){
+							inputArray[index].onkeyup = function(){
+								validate_single_input(_wrapper);
 							}
-						});
+						}
 
 					}
 				}
 				// validate one inputElement of the _input array
-				function validate_single_input(){
+				function validate_single_input(input_wrapper){
+					//如果规则为空,代表该input不需要验证,无需回调错误函数
+					if(!input_wrapper.rule_obj)
+						return input_wrapper.status = true;
 
+					var retSet = f.validateStr(input_wrapper.input.value , input_wrapper.rule_obj);
+					if(!retSet.status){
+						input_wrapper.label.innerHTML = retSet.message;
+						// callback
+						if( input_wrapper.version == 1 )
+							input_wrapper.callback.call(input_wrapper , input_wrapper.input , input_wrapper.label);
+						input_wrapper.version ++ ;
+
+						return input_wrapper.status = false;
+					}
+
+					input_wrapper.label.innerHTML = '';
+					return input_wrapper.status = true;
 				}
 				function validate_entire_form(obj){
-					// _init user config
-
+					user_config = obj;
+					if(!obj.formId)
+						throw new Error( 'The id of the form could not be null.' );
 					// _init 
-					__init(formId);
+					__init(obj.formId);
+					var total_result = true;
 					for(var index in _input){
-						validate_single_input();
+						if(!validate_single_input(_input[index]))
+							total_result = false;
 					}
+					if(!total_result)
+						return;
+					var _success_call_back = user_config.successCallback ? user_config.successCallback : default_config.successCallback;
+					_success_call_back.call(this);
+
+					var _autoCommit = user_config.autoCommit ? user_config.autoCommit : default_config.autoCommit;
+					if(_autoCommit)
+						formElement.submit();
+
+					return total_result;
+
 				}
 				return function(obj){
 					if(!obj)
@@ -544,10 +592,35 @@
 
 		function fn4(){
 			var str = "  123";
-			var ret = mTools.validate(str,{
+			var ret = mTools.validate_old(str,{
 				isNotEmpty : true,
 				maxLength:12
-			})
+			});
+			alert('ret.status = ' + ret.status);
+			mTools.validator_old.regist('minLength',function(config,str){
+				if(!config)
+					config = this.defaultConfig;
+				if(str.length < config)
+					return {
+						status : false,
+						message : '字段长度小于规定最小值'
+					};
+				return {
+					status : true
+				}
+			});
+			var ret1 = mTools.validate_old("123",{
+				minLength : 4
+			});
+			alert('ret1.status = ' + ret1.status);
+		}
+
+		function fn5(){
+			var str = "  123";
+			var ret = mTools.validateStr(str,{
+				isNotEmpty : true,
+				maxLength:12
+			});
 			alert('ret.status = ' + ret.status);
 			mTools.validator.regist('minLength',function(config,str){
 				if(!config)
@@ -561,14 +634,29 @@
 					status : true
 				}
 			});
-			var ret1 = mTools.validate("123",{
+			var ret1 = mTools.validateStr("123",{
 				minLength : 4
 			});
 			alert('ret1.status = ' + ret1.status);
 		}
 
-		function fn5(){
-
+		function fn6(){
+			mTools.validate({
+				formId : 'mForm',
+				'errorFeedback' : function(inputElement,labelElement){
+					// 默认在input后面追加label标签
+					inputElement.parentNode.appendChild(labelElement);
+				},
+				'successCallback' : function(){
+					// 表单验证成功 回调函数
+					alert("你可以提交表单了");
+				},
+				'attributeName' : 'mTools-rule-stack',
+				'errorClass' : 'mTools-error',
+				'autoCommit' : false,
+				'onfocusout' : true,
+				'onkeyup' : true
+			});
 		}
 	</script>
 </head>
@@ -576,8 +664,9 @@
 	<button id="b1" onclick="fn1();">click me 1 观察者模式</button>
 	<button id="b2" onclick="fn2();">click me 2 单例模式</button>
 	<button id="b2" onclick="fn3();">click me 3 工厂模式</button>
-	<button id="b2" onclick="fn4();">click me 4 策咯模式,验证单个字符串</button>
-	<button id="b2" onclick="fn5();">click me 5 策咯模式,验证表单</button>
+	<button id="b2" onclick="fn4();">click me 4 策咯模式,验证单个字符串(old)</button>
+	<button id="b2" onclick="fn5();">click me 5 策咯模式,验证单个字符串(new)</button>
+	<button id="b2" onclick="fn6();">click me 6 策咯模式,验证表单</button>
 	<form id="mForm">
 		<table style="width:50%;">
 			<tr>
@@ -587,12 +676,12 @@
 			</tr>
 			<tr>
 				<td>用户名</td>
-				<td><input type="text" name="username" mTools-maxLength="20" /></td>
+				<td><input type="text" name="username" mTools-rule-stack="{'isNotEmpty':true,'maxLength':2}" /></td>
 				<td id="username-tip"></td>
 			</tr>
 			<tr>
 				<td>密码</td>
-				<td><input type="password" name="password" id="password" mTools-rule-stack="{'maxLength':20}" /></td>
+				<td><input type="password" name="password" id="password" mTools-rule-stack="{'isNotEmpty':true,'maxLength':5}" /></td>
 				<td id="password-tip"></td>
 			</tr>
 			<tr>
