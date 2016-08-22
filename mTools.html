@@ -177,6 +177,7 @@
 					}
 				});
 			*/
+			/*
 			f.validator = {};
 			f.validate = (function(v){
 				var _rule_collection = {},_rules_stack = [];
@@ -282,14 +283,219 @@
 					if(!rule)
 							throw new Error( 'The rule could not be null.' );
 					if(typeof obj == 'string'){
-						return execute_simple_str();
+						return execute_simple_str(obj,rule);
 					}
 					if(typeof obj == 'object'){
 						return execute_form_json(obj,rule);
 					}
 				}
 			})(f.validator);
-			
+			*/
+
+			// validate module core
+			// @example 如果想添加验证规则
+			//	mTools.validator.regist('minLength',[defaultConfig],function(config,str){
+			//		if(!config)
+			//			config = this.defaultConfig;
+			//		//
+			//		return {
+			//			'status':true,
+			//			'message':''
+			//		}
+			// });
+			f.validator = {};
+			(function(v){
+				// rule collection
+				var _rule_collection = {};
+				// common interface for f.validateStr and f.validate module
+				v._common._rule_collection = _rule_collection;
+				// define a Rule Object
+				var Rule = function(name,defaultConfig,fn){
+					this.name = name;
+					this.defaultConfig = defaultConfig;
+					this.fn = fn;
+				};
+				// regist default rules
+				(function(c){
+					// isNotEmpty
+					var isNotEmpty = new Rule("isNotEmpty",true,function(config,str){
+						if(!config)
+							config = this.defaultConfig;
+						var ret = {'status':true,'message':''};
+						if(config){
+							// "" 和 "   " 和 undefined 和 null 都是empty
+							if(!(str && str.trim())){
+								ret.status = false;
+								ret.message = "字段为空";
+							}
+						}else{
+							// 期望为空
+							if(str && str.trim()){
+								ret.status = false;
+								ret.message = "字段不为空";
+							}
+						}
+						return ret;
+					});
+					_rule_collection["isNotEmpty"] = isNotEmpty;
+					//maxLength
+					var maxLength = new Rule("maxLength",10,function(config,str){
+						if(!config)
+							config = this.defaultConfig;
+						var ret = {'status':true,'message':''};
+						// 先验证str是否为空
+						if(!str){
+							ret.status = false;
+							ret.message = '该字段为空,无法判断长度';
+						}
+						if(!(typeof str == 'string')){
+							ret.status = false;
+							ret.message = '该字段不是字符串,无法判断长度';
+						}
+						if(str.length > config){
+							ret.status = false;
+							ret.message = '字段长度超过规定最大值' + config;
+						}
+						return ret;
+					});
+					_rule_collection["maxLength"] = maxLength;
+
+				})(_rule_collection);
+				// add your own validate rules
+				v.regist = function(name,defaultConfig,fn){
+					if(!name)
+						return;
+					var _user_rule;
+					if(typeof defaultConfig == 'function')
+						_user_rule = new Rule(name,null,defaultConfig);
+					else
+						_user_rule = new Rule(name,defaultConfig,fn);
+					_rule_collection[name] = _user_rule;
+				}
+			})(f.validator);
+
+			// validate String
+			// @example
+			// mTools.validateStr("1234",{
+			//		isNotEmpty : true,
+			//		maxLength : 20
+			// });
+			// @return {'status':true | false , 'message':''}
+			f.validateStr = (function(common){
+				var _rule_collection = common._rule_collection;
+				var _rules_stack = [];
+				// private method
+				function execute_simple_str(obj,rule){
+					var retSet = {'status':true,'message':''};
+					for(var i in rule){
+						_rules_stack.push({
+							'name' : i,
+							'config' : rule[i]
+						});
+					}
+					if(_rules_stack.length > 0)
+						for(var index in _rules_stack){
+							var name = _rules_stack[index].name;
+							var config = _rules_stack[index].config;
+							if(!_rule_collection[name])
+								continue;
+							var ret = _rule_collection[name].fn.call(_rule_collection[name],config,obj);
+							if(!ret.status){
+								retSet.status = false;
+								retSet.message= ret.message;
+								break;
+							}
+						}
+					_rules_stack = [];
+					return retSet;
+				}
+				return function(obj,rule){
+					if(!rule)
+							throw new Error( 'The rule could not be null.' );
+					if(typeof obj == 'string')
+						return execute_simple_str();
+					return;
+				}
+			})(f.validator._common);
+
+			// validate form
+			// @example
+			// mTools.validate({
+
+			// });
+			f.validate = (function(common){
+				var _rule_collection = common._rule_collection , document = window.document;
+				// config
+				var default_config = {
+					
+				};
+				//
+				var _input = [];
+				_input.push({
+					'input' : inputElement,
+					'rule_stack' : [{'name':'isNotEmpty','config':true}],
+					'label' : labelElement,
+					'status' : false,
+					'callback' : function(){}
+				});
+				//inputWrapper.prototype = {};
+				// 先找到所有form下的input标签
+				// 逐一解析input的属性，生成每个input的规则栈
+				// 逐一判断每个input是否正确，触发每个input的回调函数
+				// return最终结果true或者false
+				// 根据配置 auto-commit 设置是否自动提交表单
+				function __init(formId){
+					var inputArray = document.getElementById(formId).getElementsByTagName("input");
+					for(var index = 0 ; index < inputArray.length ; index++ ){
+						//var inputElement = inputArray[index];
+						var _rules = inputArray[index].getAttribute('mTools-rule-stack');
+						if(!_rules)
+							continue;
+						// push the wrapper into _input
+						var labelElement = document.createElement('label');
+						labelElement.setAttribute("for",inputElement.getAttribute('name'));
+						labelElement.className = "mTools-error";
+						var this_rule_stack = [];
+						for(var field in _rules){
+							this_rule_stack.push({
+								'name' : field,
+								'config' : _rules[field]
+							});
+						}
+						_input.push({
+							'input' : inputArray[index],
+							'label' : , labelElement,
+							'status' : false,
+							'rule_stack' : this_rule_stack;
+							'callback' : function(inputElement,error){
+
+							}
+						});
+
+					}
+				}
+				// validate one inputElement of the _input array
+				function validate_single_input(){
+
+				}
+				function validate_entire_form(obj){
+					// _init user config
+
+					// _init 
+					__init(formId);
+					for(var index in _input){
+						validate_single_input();
+					}
+				}
+				return function(obj){
+					if(!obj)
+						throw new Error( 'The parameter could not be null.' );
+					if(typeof obj == 'string')
+						return;
+					return validate_entire_form(obj);
+				}	
+			})(f.validator._common);
+
 			window.mTools = f;
 
 		})(window);
@@ -381,12 +587,12 @@
 			</tr>
 			<tr>
 				<td>用户名</td>
-				<td><input type="text" name="username" /></td>
+				<td><input type="text" name="username" mTools-maxLength="20" /></td>
 				<td id="username-tip"></td>
 			</tr>
 			<tr>
 				<td>密码</td>
-				<td><input type="password" name="password" id="password"/></td>
+				<td><input type="password" name="password" id="password" mTools-rule-stack="{'maxLength':20}" /></td>
 				<td id="password-tip"></td>
 			</tr>
 			<tr>
