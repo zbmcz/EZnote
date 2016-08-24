@@ -291,17 +291,19 @@
 				}
 			})(f.validator_old);
 
-			// validate module core
-			// @example 如果想添加验证规则
-			//	mTools.validator.regist('minLength',[defaultConfig],function(config,str){
-			//		if(!config)
-			//			config = this.defaultConfig;
-			//		//
-			//		return {
-			//			'status':true,
-			//			'message':''
-			//		}
-			// });
+			/**
+			validate module core
+			@example 如果想添加验证规则
+				mTools.validator.regist('minLength',[defaultConfig],function(config,str){
+					if(!config)
+						config = this.defaultConfig;
+					//
+					return {
+						'status':true,
+						'message':''
+					}
+			});
+			*/
 			f.validator = {};
 			(function(v){
 				// rule collection
@@ -348,10 +350,10 @@
 							ret.status = false;
 							ret.message = '该字段为空,无法判断长度';
 						}
-						if(!(typeof str == 'string')){
-							ret.status = false;
-							ret.message = '该字段不是字符串,无法判断长度';
-						}
+						//if(!(typeof str == 'string')){
+						//	ret.status = false;
+						//	ret.message = '该字段不是字符串,无法判断长度';
+						//}
 						if(str.length > config){
 							ret.status = false;
 							ret.message = '字段长度超过规定最大值' + config;
@@ -359,6 +361,25 @@
 						return ret;
 					});
 					_rule_collection["maxLength"] = maxLength;
+					// equalTo
+					var equalTo = new Rule("equalTo",null,function(config,str){
+						if(!config)
+							config = this.defaultConfig;
+						var ret = {'status':true,'message':''};
+						if(!str){
+							ret.status = false;
+							ret.message = "你特么啥也不写,比较个屁啊"
+							return ret;
+						}
+						var otherId = config.split('#')[1];
+						if(document.getElementById(otherId).value == str)
+							return ret;
+
+						ret.status = false;
+						ret.message = "两次输入的数值不相等,请重新输入";
+						return ret;
+					});
+					_rule_collection["equalTo"] = equalTo;
 
 				})(_rule_collection);
 				// add your own validate rules
@@ -371,6 +392,10 @@
 					else
 						_user_rule = new Rule(name,defaultConfig,fn);
 					_rule_collection[name] = _user_rule;
+				};
+				// change default tip words
+				v.message = function(obj){
+
 				}
 			})(f.validator);
 
@@ -418,11 +443,26 @@
 				}
 			})(f.validator._common);
 
-			// validate form
-			// @example
-			// mTools.validate({
-
-			// });
+			/**
+				@validate form
+				@example
+				mTools.validate({
+					formId : 'mForm',
+					'errorFeedback' : function(inputElement,labelElement){
+						// 默认在input后面追加label标签
+						inputElement.parentNode.appendChild(labelElement);
+					},
+					'successCallback' : function(){
+						// 表单验证成功 回调函数
+						alert("你可以提交表单了");
+					},
+					'attributeName' : 'mTools-rule-stack',
+					'errorClass' : 'mTools-error',
+					'autoCommit' : false,
+					'onfocusout' : true,
+					'onkeyup' : true
+				});
+			*/
 			f.validate = (function(common){
 				var _rule_collection = common._rule_collection , document = window.document , formElement = null;
 				// config
@@ -478,16 +518,20 @@
 						// onfocusout
 						var _onfocusout = user_config.onfocusout ? user_config.onfocusout : default_config.onfocusout;
 						if(_onfocusout){
-							inputArray[index].onblur = function(){
-								validate_single_input(_wrapper);
-							};
+							inputArray[index].onblur = (function(_wrap){
+								return function(){
+									validate_single_input(_wrap);
+								}
+							})(_wrapper);
 						}
 						// onkeyup
 						var _onkeyup = user_config.onkeyup ? user_config.onkeyup : default_config.onkeyup;
 						if(_onkeyup){
-							inputArray[index].onkeyup = function(){
-								validate_single_input(_wrapper);
-							}
+							inputArray[index].onkeyup = (function(_wrap){
+								return function(){
+									validate_single_input(_wrap);
+								}
+							})(_wrapper);
 						}
 
 					}
@@ -513,6 +557,9 @@
 					return input_wrapper.status = true;
 				}
 				function validate_entire_form(obj){
+					// clear 
+					_input = [];
+
 					user_config = obj;
 					if(!obj.formId)
 						throw new Error( 'The id of the form could not be null.' );
@@ -645,7 +692,8 @@
 				formId : 'mForm',
 				'errorFeedback' : function(inputElement,labelElement){
 					// 默认在input后面追加label标签
-					inputElement.parentNode.appendChild(labelElement);
+					//inputElement.parentNode.appendChild(labelElement);
+					document.getElementById(inputElement.name + '-tip').appendChild(labelElement);
 				},
 				'successCallback' : function(){
 					// 表单验证成功 回调函数
@@ -686,7 +734,7 @@
 			</tr>
 			<tr>
 				<td>确认密码</td>
-				<td><input type="password" name="confirm_password"/></td>
+				<td><input type="password" name="confirm_password" mTools-rule-stack="{'isNotEmpty':true,'equalTo':'#password'}"/></td>
 				<td id="confirm_password-tip"></td>
 			</tr>
 			<tr>
