@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Test html</title>
+	<meta charset="utf-8">
+	<script type="text/javascript">
+		//为了解决部分浏览器不兼容forEach filter
+		if (!Array.prototype.forEach) {
+		    Array.prototype.forEach = function (fn, thisObj) {
+		        var scope = thisObj || window;
+		        for (var i = 0, j = this.length; i < j; ++i) {
+		            fn.call(scope, this[i], i, this);
+		        }
+		    };
+		}
+	
+		if (!Array.prototype.filter) {
+		    Array.prototype.filter = function (fn, thisObj) {
+		        var scope = thisObj || window;
+		        var a = [];
+		        for (var i = 0, j = this.length; i < j; ++i) {
+		            if (!fn.call(scope, this[i], i, this)) {
+		                continue;
+		            }
+		            a.push(this[i]);
+		        }
+		        return a;
+		    };
+		}
+		
+	</script>
+
+	<script type="text/javascript">
+
+		var Framework = function(){
+			this.collection = {};
+		}
+		Framework.prototype = {
+
+			broadcast : function(action){
+				if(action){
+					var actionArray = this.collection[action];
+					actionArray.forEach(function(obj){
+						obj.execute();
+					});
+				}
+				for(var field in this.collection){
+					this.collection[field].forEach(function(obj){
+						obj.execute();
+					});
+				}
+			},
+			regist : function(action,func){
+				if(!action)
+					return;
+				if(!this.collection[action])
+					this.collection[action] = [];
+				this.collection[action].push({
+					execute : func
+				});
+			},
+			unregist : function(func){
+				for(var field in this.collection){
+					this.collection[field] = this.collection[field].filter(function(obj){
+						var storageFunc = obj.execute;
+						if(storageFunc !== func)
+							return obj;
+					});
+				}
+			}
+
+		};
+		var framework = new Framework();
+
+		//Test
+		function begin(){
+
+			var test = function(){
+				alert("first");
+			}
+
+			framework.regist('click',test);
+
+			framework.broadcast();
+
+			framework.unregist(test);
+
+			framework.broadcast();
+		}
+	</script>
+</head>
+<body>
+	<button onclick="javascript:begin();">click me</button>
+</body>
+</html>

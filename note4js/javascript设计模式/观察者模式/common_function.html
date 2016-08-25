@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Test html</title>
+	<meta charset="utf-8">
+	<script type="text/javascript">
+		//为了解决部分浏览器不兼容forEach filter
+		if (!Array.prototype.forEach) {
+		    Array.prototype.forEach = function (fn, thisObj) {
+		        var scope = thisObj || window;
+		        for (var i = 0, j = this.length; i < j; ++i) {
+		            fn.call(scope, this[i], i, this);
+		        }
+		    };
+		}
+	
+		if (!Array.prototype.filter) {
+		    Array.prototype.filter = function (fn, thisObj) {
+		        var scope = thisObj || window;
+		        var a = [];
+		        for (var i = 0, j = this.length; i < j; ++i) {
+		            if (!fn.call(scope, this[i], i, this)) {
+		                continue;
+		            }
+		            a.push(this[i]);
+		        }
+		        return a;
+		    };
+		}
+		
+	</script>
+	<script type="text/javascript">
+
+		var framework = {};
+		(function(f){
+
+			var collection = {};
+
+			f.regist = function(action,func){
+				if(!action)
+					throw new Error( "please confirm the action" );
+				if(!collection[action])
+					collection[action] = [];
+				collection[action].push(func);
+			}
+
+			f.unregist = function(action,func){
+				if(action){
+					collection[action] = collection[action].filter(function(obj){
+						if(obj === func)
+							return false;
+						return true;
+					});
+					return;
+				}
+				for(var field in collection){
+					var arr = collection[field];
+					collection[field] = arr.filter(function(obj){
+						if(obj === func)
+							return false;
+						return true;
+					});
+				}
+			}
+
+			f.broadcast = function(action,params){
+				if(action){
+					if(collection[action]){
+						collection[action].forEach(function(obj){
+							obj.call(this , params);
+						});
+					}
+					
+					return;
+				}
+				for(var field in collection){
+					collection[field].forEach(function(obj){
+						obj.call(this , params);
+					});
+				}
+			}
+
+			f.getObserveFunc = function(obj){
+				for(var field in this){
+					obj[field] = this[field];
+					obj.collection = [];
+				}
+			}
+
+		}(framework));
+
+		//Test
+		function begin(){
+
+			var test = function(params){
+				alert("first" + " " + params);
+			};
+
+			var test1 = function(params){
+				alert("second" + " " + params);
+			}
+			
+			var myObject = {};
+			framework.getObserveFunc(myObject);
+
+			myObject.regist('click',test);
+			myObject.regist('click',test1);
+			myObject.broadcast('click','hehe');
+			myObject.unregist('click',test);
+			myObject.broadcast(null,'cao');
+			
+		}
+	</script>
+</head>
+<body>
+	<button onclick="javascript:begin();">click me</button>
+</body>
+</html>

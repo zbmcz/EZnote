@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Test html</title>
+	<meta charset="utf-8">
+	<script type="text/javascript">
+
+		var framework = {}; 
+		(function(f){
+
+			var collection = {};
+			var uidGenerator = {
+				index : 0,
+				createUid : function(){
+					return (++this.index);
+				}
+			};
+
+			f.broadcast = function(action){
+				if(action){
+					for(var i in collection[action]){
+							var obj = collection[action][i];
+							obj.execute(obj);
+					}
+					return;
+				}
+				//itrate all the action field
+				for(var field in collection){
+					for(var i = 0 ; i < collection[field].length ; i++){
+							var obj = collection[field][i];
+							obj.execute(obj);
+					}
+				}
+			}
+
+			f.regist = function(action,func){
+				if( !action )
+					return;
+				if(!collection[action])
+					collection[action] = [];
+				collection[action].push({
+					uid : uidGenerator.createUid(),
+					action : action,
+					execute : func
+				});
+			}
+
+			f.unregist = function(action,uid){
+				if(!action)
+					return;
+				if(!collection[action])
+					return;
+				for(var i = 0 ; i < collection[action].length ; i++){
+					if(collection[action][i].uid = uid)
+						collection[action].splice(i,1);
+				}
+			}
+
+		}(framework));
+
+		//Test
+		function begin(){
+
+			var test = function(object){
+				alert("first" + " " + object.uid);
+			};
+
+			framework.regist('click',test);
+
+			framework.broadcast('clicka');
+
+			framework.unregist('click',1);
+
+			framework.broadcast();
+			
+		}
+	</script>
+</head>
+<body>
+	<button onclick="javascript:begin();">click me</button>
+</body>
+</html>

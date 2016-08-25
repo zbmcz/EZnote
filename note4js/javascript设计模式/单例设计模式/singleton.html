@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Test html</title>
+	<meta charset="utf-8">
+	<script type="text/javascript">
+		function showModel(){
+			var model = createModel();
+			// do what you want here
+			console.log("model = " + model);
+		}
+		var createModel = function(){
+		  var model;
+		  return function(){
+		  	if(model)
+		  		return model;
+		  	model = document.body.appendChild( document.createElement('div') );
+		  	return model;
+		    //return model || ( model = document.body.appendChild( document.createElement('div') ) )
+		  }
+		}();
+	</script>
+	<script type="text/javascript">
+		//通用单例设计器
+		var singleton = function( fn ){
+		    var result;
+		    return function(){
+		        return result || ( result = fn .apply( this, arguments ) );
+		    }
+		}
+
+		var createMask = singleton( function(color){
+			console.log("I create a task which color is " + color);
+			return document.body.appendChild( document.createElement('div') );
+		 });
+
+		function common(){
+			var color = "red";
+			var mask = createMask(color);
+			console.log("mask = " + mask);
+		}
+	</script>
+</head>
+<body>
+	<button onclick="javascript:showModel();">click me show model</button>
+	<br/>
+	<button onclick="javascript:common();">click me show common</button>
+</body>
+</html>
