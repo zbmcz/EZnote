@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Yogyue Manage System</title>
+		<link rel="stylesheet" type="text/css" href="themes/default/easyui.css">
+		<link rel="stylesheet" type="text/css" href="themes/icon.css">
+		<script type="text/javascript" src="jquery/jquery-2.1.4.min.js"></script>
+		<script type="text/javascript" src="jquery/jquery.easyui.min.js"></script>
+		<style type="text/css">
+			.navButton{border-radius:0}
+		</style>
+	</head>
+	
+	<body>
+		<div class="easyui-layout" data-options="fit:true">
+			<div data-options="region:'north',split:true" style="height:80px">
+				<font style="font-size:40px;"><B>Yogyue ERP</B></font>
+			</div>
+			<div data-options="region:'south',split:true" style="height:50px;">
+				<div style="text-align:center; padding-top:10px;">Copyright © 2010-2015 www.yogyue.com</div>
+			</div>
+			<div data-options="region:'east',split:true" title="快速导航" style="width:15%; padding-top:10px; padding-left:10px;">
+				<a href="">成绩查询</a><br/><br/>
+				<a href="">课表查看</a><br/>
+			</div>
+			<div data-options="region:'west',split:true" title="功能栏" style="width:250px;">
+				<!-- 左侧导航栏 -->
+				<div class="easyui-accordion" style="width:100%;">
+				    <div title="学生管理" iconCls="icon-ok" selected="true" style="overflow:auto;">
+				    	<!-- GroupButton -->
+				        <div class="easyui-panel" style="border:0px">
+				        	<ul style="list-style:none; padding:0; margin:0">
+				        		<li><a href="#" id="navButton_1" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%;">个人信息</a></li>
+				        		<li><a href="#" id="navButton_2" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">培养计划</a></li>
+				        		<li><a href="#" id="navButton_3" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">成绩查询</a></li>
+				        		<li><a href="#" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">在线选课</a></li>
+				        		<li><a href="#" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">重修及补休</a></li>
+				        	</ul>
+						</div>
+						<!-- end of GroupButton -->
+				    </div>
+				    <div title="教师管理" iconCls="icon-reload" style="">
+				        <!-- GroupButton -->
+				        <div class="easyui-panel" style="border:0px">
+				        	<ul style="list-style:none; padding:0; margin:0">
+				        		<li><a href="#" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">在线查询</a></li>
+				        		<li><a href="#" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">评教系统</a></li>
+				        		<li><a href="#" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">学院师资力量</a></li>
+				        	</ul>
+						</div>
+						<!-- end of GroupButton -->
+				    </div>
+				    <div title="教学资源" iconCls="icon-ok">
+				    	<!-- GroupButton -->
+				        <div class="easyui-panel" style="border:0px">
+				        	<ul style="list-style:none; padding:0; margin:0">
+				        		<li><a href="#" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">教室查询</a></li>
+				        		<li><a href="#" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">实验室分布</a></li>
+				        		<li><a href="#" class="easyui-linkbutton navButton" data-options="toggle:true,group:'g1'" style="width:100%">图书馆</a></li>
+				        	</ul>
+						</div>
+						<!-- end of GroupButton -->
+			    	</div>
+				</div>
+			</div>
+			<div data-options="region:'center',title:'功能区',iconCls:'icon-ok',tools:[{iconCls:'icon-reload'}]" id="mPanel" class="easyui-panel" >
+					
+					<!-- changeable block -->
+					<div id="mPanel" class="easyui-panel" title="Load Panel Content" style="width:700px;height:200px;padding:10px;">
+					</div>
+
+			</div>
+		</div>
+		<script type="text/javascript">
+			$(document).ready(function(){
+				initNavButton();
+			});
+			var setPanelRefreshURL = function(Element,url){
+				Element.panel({
+					tools:[{
+						iconCls:'icon-reload',
+						handler:function(){
+							Element.panel('refresh',url);
+						}
+					}]
+				});
+			}
+			function initNavButton(){
+				// add the click event to button_1
+				$("#navButton_1").click(function(){
+					var content_1 = '';
+					// fresh the 'mPanel' area
+					$("#mPanel").panel('refresh',content_1);
+					// reset the refresh button
+					$("#mPanel").panel({
+						tools:[{
+							iconCls:'icon-reload',
+							handler:function(){
+								$("#mPanel").panel('refresh',content_1);
+							}
+						}]
+					});
+				});
+				// add the click event to button_2
+				$("#navButton_2").click(function(){
+					var content_2 = '';
+					// fresh the 'mPanel' area
+					$("#mPanel").panel('refresh',content_2);
+					// reset the refresh button
+					$("#mPanel").panel({
+						tools:[{
+							iconCls:'icon-reload',
+							handler:function(){
+								$("#mPanel").panel('refresh',content_2);
+							}
+						}]
+					});
+				});
+			}
+		</script>
+	</body>
+</html>
